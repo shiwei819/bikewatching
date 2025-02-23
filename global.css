@@ -39,3 +39,32 @@ html, body {
 #map svg circle {
   pointer-events: auto;
 }
+
+header {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+  width: 100%;
+}
+
+header label {
+  margin-left: auto;
+}
+
+#time-slider {
+  width: 400px;
+}
+
+#any-time {
+  display: block;
+  font-style: italic;
+  font-size: small;
+  text-align: right;
+  color: grey;
+}
+
+#selected-time {
+  display: block;
+  margin-left: auto;
+  text-align: right;
+}
