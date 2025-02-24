@@ -110,6 +110,8 @@ function filterByMinute(tripsByMinute, minute) {
     }
 }
 
+let timeFilter = -1;
+
 // helper array for storing blocks of data to quickly filter
 let departuresByMinute = Array.from({ length: 1440 }, () => []);
 let arrivalsByMinute = Array.from({ length: 1440 }, () => []);
@@ -283,16 +285,32 @@ map.on('load', async () => {
 
     const svg = d3.select('#map').select('svg');
 
+    // define a transformer to convert depature for later coloring
+    let stationFlow = d3.scaleQuantize().domain([0,1]).range([0, 0.5, 1]);
+
+    const radiusScale = d3
+                        .scaleSqrt()
+                        .domain([0, d3.max(stations, (d) => d.totalTraffic)])
+                        .range([0,25]);
+
     // append circles to the SVG for each station
     const circles = svg.selectAll('circle')
                             .data(stations, (d) => d.short_name)    //  Use station short_name as the key
                             .enter()
                             .append('circle')
-                            .attr('r', 5)
-                            .attr('fill', 'steelblue')
+                            // .attr('r', 5)
+                            .attr('r', d => radiusScale(d.totalTraffic))    // set radius respect to traffic
+                            .each(function(d) {  // create tooltip
+                                // Add <title> for browser tooltips
+                                d3.select(this)
+                                    .append('title')
+                                    .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
+                            })
+                            // .attr('fill', 'steelblue')
                             .attr('stroke', 'white')
                             .attr('stroke-width', 1)
-                            .attr('opacity', 0.6);
+                            .attr('opacity', 0.6)
+                            .style("--departure-ratio", d => stationFlow(d.departures / d.totalTraffic));
     
     // Function to update circle positions when the map moves/zooms
     function updatePositions() {
@@ -309,20 +327,6 @@ map.on('load', async () => {
     map.on('resize', updatePositions);   // Update on window resize
     map.on('moveend', updatePositions);  // Final adjustment after movement ends
 
-    const radiusScale = d3
-                        .scaleSqrt()
-                        .domain([0, d3.max(stations, (d) => d.totalTraffic)])
-                        .range([0,25]);
-
-    // set radius respect to traffic
-    circles.attr('r', d => radiusScale(d.totalTraffic))
-            .each(function(d) {  // create tooltip
-                // Add <title> for browser tooltips
-                d3.select(this)
-                    .append('title')
-                    .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
-            });
-
     // } catch (error) {
     //     console.error('Error loading JSON:', error);    // Handle erros
     // }
@@ -331,7 +335,7 @@ map.on('load', async () => {
     const timeSlider = document.getElementById('time-slider');
     const selectedTime = document.getElementById('selected-time');
     const anyTimeLabel = document.getElementById('any-time');
-    let timeFilter = -1;
+
 
     // function update timefilter base on slider's value
     function updateTimeDisplay() {
@@ -349,9 +353,6 @@ map.on('load', async () => {
         updateScatterPlot(timeFilter);
     }
 
-    timeSlider.addEventListener('input', updateTimeDisplay);
-    updateTimeDisplay;
-
     // function update circles on map
     function updateScatterPlot(timeFilter) {
         // Get only the trips that match the selected time filter   -------- Abandoned too expensive
@@ -367,8 +368,18 @@ map.on('load', async () => {
         circles
             .data(filteredStations, (d) => d.short_name)    // Ensure D3 tracks elements correctly
             .join('circle') //  Ensure the data is bound correctly
-            .attr('r', (d) => radiusScale(d.totalTraffic)); // Update circle sizes
+            .attr('r', (d) => d.totalTraffic === 0 ? 0 : radiusScale(d.totalTraffic)) // Update circle sizes, Don't draw if totalTraffic is 0
+            .each(function(d) {  // create tooltip
+                // Update <title> for browser tooltips
+                d3.select(this)
+                    .select('title')
+                    .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
+            })
+            .style('--departure-ratio', (d) => stationFlow(d.departures / d.totalTraffic));
     }
+
+    timeSlider.addEventListener('input', updateTimeDisplay);
+    updateTimeDisplay();
 })
 
 

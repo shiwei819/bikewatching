@@ -68,3 +68,52 @@ header label {
   margin-left: auto;
   text-align: right;
 }
+
+#map circle,
+.legend > div {
+  --color-departures: steelblue;
+  --color-arrivals: darkorange;
+  --color: color-mix(
+    in oklch,
+    var(--color-departures) calc(100% * var(--departure-ratio)),
+    var(--color-arrivals)
+  );
+}
+
+/* color circles */
+#map circle {
+  fill: var(--color);
+}
+
+/* legend */
+.legend {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+  margin-block: 1em;
+  gap: 1px;
+  width: 100%;
+}
+
+.legend div {
+  flex: 1;
+  color: white;
+  font-weight:600;
+  background-color: var(--color);
+  padding: 0.3em;
+}
+
+/* Align the first div to the left */
+.legend div:first-child {
+  text-align: left;
+}
+
+/* Align the second div to the center */
+.legend div:nth-child(2) {
+  text-align: center;
+}
+
+/* Align the third div to the right */
+.legend div:last-child {
+  text-align: right;
+}
